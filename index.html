@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> 덕진 어울림 한마당 점수 집계 프로그램</title>
+    <style>
+        :root {
+            /* 학년별 테마 색상 변수 */
+            --g1-bg: linear-gradient(135deg, #FFFDE7 0%, #FFF59D 100%);
+            --g1-primary: #FBC02D;
+            --g1-accent: #F57F17;
+
+            --g2-bg: linear-gradient(135deg, #E0F7FA 0%, #80DEEA 100%);
+            --g2-primary: #00ACC1;
+            --g2-accent: #006064;
+
+            --g3-bg: linear-gradient(135deg, #FCE4EC 0%, #F8BBD0 100%);
+            --g3-primary: #EC407A;
+            --g3-accent: #880E4F;
+
+            --current-bg: var(--g1-bg);
+            --current-primary: var(--g1-primary);
+            --current-accent: var(--g1-accent);
+        }
+
+        body {
+            font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
+            margin: 0;
+            padding: 30px 20px;
+            background: var(--current-bg);
+            transition: background 0.5s ease;
+            color: #2c3e50;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1050px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 25px;
+            color: #1e293b;
+            letter-spacing: -0.5px;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 20px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #334155;
+        }
+
+        /* 탭 버튼 스타일 */
+        .tab-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 700;
+            border: none;
+            background: #e2e8f0;
+            color: #64748b;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .tab-btn.active[data-grade="1"] {
+            background: linear-gradient(135deg, #FBC02D, #F57F17);
+            color: white;
+            box-shadow: 0 4px 12px rgba(245, 127, 23, 0.3);
+        }
+
+        .tab-btn.active[data-grade="2"] {
+            background: linear-gradient(135deg, #00ACC1, #00838F);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 131, 143, 0.3);
+        }
+
+        .tab-btn.active[data-grade="3"] {
+            background: linear-gradient(135deg, #EC407A, #C2185B);
+            color: white;
+            box-shadow: 0 4px 12px rgba(194, 24, 91, 0.3);
+        }
+
+        .info-box {
+            background-color: #f8fafc;
+            border-left: 5px solid var(--current-primary);
+            padding: 14px 18px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #475569;
+            transition: border-color 0.3s ease;
+        }
+
+        /* 테이블 공통 스타일 */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 25px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #1e293b;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        /* 순위 입력 창 스타일 (기존 크기 대비 2배 확대) */
+        input[type="number"] {
+            width: 65px;
+            height: 50px;
+            font-size: 28px; /* 기존 14px -> 28px로 2배 확대 */
+            font-weight: 800;
+            text-align: center;
+            color: #0f172a;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            outline: none;
+            transition: all 0.2s ease;
+            background-color: #ffffff;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--current-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            background-color: #fff;
+        }
+
+        /* 계산 버튼 */
+        .btn-calc {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            font-size: 20px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn-calc:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        /* 결과 테이블 강조 */
+        .result-table th {
+            background-color: #334155;
+        }
+
+        .rank-1 { background-color: #fef08a !important; font-weight: bold; color: #854d0e; }
+        .rank-2 { background-color: #f1f5f9 !important; }
+        .rank-3 { background-color: #ffedd5 !important; color: #9a3412; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1> 2026 덕진 어울림 한마당 점수 집계 프로그램</h1>
+
+    <!-- 학년 선택 탭 -->
+    <div class="tab-buttons">
+        <button class="tab-btn active" data-grade="1" onclick="switchGrade(1)">1학년 (1~6반)</button>
+        <button class="tab-btn" data-grade="2" onclick="switchGrade(2)">2학년 (1~5반)</button>
+        <button class="tab-btn" data-grade="3" onclick="switchGrade(3)">3학년 (1~6반)</button>
+    </div>
+
+    <div class="info-box">
+        * 각 종목별로 각 반의 <strong>순위(숫자)</strong>를 입력한 후 <strong>[점수 집계 및 순위 산출]</strong> 버튼을 누르세요.<br>
+        * 입력된 값은 학년을 이동해도 유지되며, 언제든 수정 후 재집계할 수 있습니다.<br>
+        * 동점자 처리 규정: <strong>총득점 &gt; 우승(1등) 횟수 &gt; 줄다리기 순위</strong> 순으로 자동 계산됩니다.
+    </div>
+
+    <!-- 순위 입력 테이블 -->
+    <h2>종목별 순위 입력</h2>
+    <table id="input-table">
+        <thead id="input-head"></thead>
+        <tbody id="input-body"></tbody>
+    </table>
+
+    <button class="btn-calc" onclick="calculateScores()">점수 집계 및 순위 산출</button>
+
+    <!-- 집계 결과 테이블 -->
+    <h2>종합 집계 결과</h2>
+    <table class="result-table">
+        <thead id="result-head"></thead>
+        <tbody id="result-body"></tbody>
+    </table>
+</div>
+
+<script>
+// 엑셀 기준 배점표
+const scoreRules = {
+   "축구": [200, 170, 150, 150, 100, 100],
+  "풋살": [200, 170, 150, 150, 100, 100],  
+  "피구": [250, 200, 160, 130, 120, 100], 
+  "100M(남)": [100, 70,  50,  40,  20,  10],
+  "100M(여)": [100, 70,  50,  40,  20,  10],  
+  "2인3각": [250, 200, 160, 130, 120, 100], 
+  "이어달리기": [200, 160, 130, 120, 100, 80],
+  "투호": [250, 200, 160, 130, 120, 100],
+  "자유투": [250, 200, 160, 130, 120, 100],
+  "단체줄넘기": [250, 200, 160, 130, 120, 100],
+  "줄다리기": [300, 250, 200, 200, 150, 150],
+};
+
+const prizeMoney = { 1: "17만원", 2: "14만원", 3: "10만원", 4: "7만원", 5: "5만원", 6: "3만원" };
+const sportsList = Object.keys(scoreRules);
+
+let currentGrade = 1;
+const gradeClasses = { 1: 6, 2: 5, 3: 6 };
+const gradeData = { 1: {}, 2: {}, 3: {} };
+
+function saveCurrentInputs() {
+    const classCount = gradeClasses[currentGrade];
+    sportsList.forEach((sport, sIdx) => {
+        if (!gradeData[currentGrade][sport]) {
+            gradeData[currentGrade][sport] = {};
+        }
+        for (let c = 1; c <= classCount; c++) {
+            const inputElem = document.getElementById(`rank_${sIdx}_${c}`);
+            if (inputElem) {
+                gradeData[currentGrade][sport][c] = inputElem.value;
+            }
+        }
+    });
+}
+
+function updateTheme(grade) {
+    const root = document.documentElement;
+    if (grade === 1) {
+        root.style.setProperty('--current-bg', 'var(--g1-bg)');
+        root.style.setProperty('--current-primary', 'var(--g1-primary)');
+        root.style.setProperty('--current-accent', 'var(--g1-accent)');
+    } else if (grade === 2) {
+        root.style.setProperty('--current-bg', 'var(--g2-bg)');
+        root.style.setProperty('--current-primary', 'var(--g2-primary)');
+        root.style.setProperty('--current-accent', 'var(--g2-accent)');
+    } else if (grade === 3) {
+        root.style.setProperty('--current-bg', 'var(--g3-bg)');
+        root.style.setProperty('--current-primary', 'var(--g3-primary)');
+        root.style.setProperty('--current-accent', 'var(--g3-accent)');
+    }
+}
+
+function switchGrade(grade) {
+    saveCurrentInputs();
+    currentGrade = grade;
+    
+    updateTheme(grade);
+
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+        btn.classList.toggle('active', parseInt(btn.getAttribute('data-grade')) === grade);
+    });
+    
+    renderTables();
+    
+    if (gradeData[currentGrade]._calculated) {
+        calculateScores();
+    }
+}
+
+function renderTables() {
+    const classCount = gradeClasses[currentGrade];
+    
+    let inputHeadHTML = `<tr><th>종목</th>`;
+    for (let c = 1; c <= classCount; c++) {
+        inputHeadHTML += `<th>${c}반</th>`;
+    }
+    inputHeadHTML += `</tr>`;
+    document.getElementById('input-head').innerHTML = inputHeadHTML;
+
+    let inputBodyHTML = '';
+    sportsList.forEach((sport, sIdx) => {
+        inputBodyHTML += `<tr><td><strong>${sport}</strong></td>`;
+        for (let c = 1; c <= classCount; c++) {
+            const savedVal = (gradeData[currentGrade][sport] && gradeData[currentGrade][sport][c]) 
+                ? gradeData[currentGrade][sport][c] 
+                : '';
+                
+            inputBodyHTML += `<td><input type="number" id="rank_${sIdx}_${c}" min="1" max="${classCount}" placeholder="-" value="${savedVal}" onchange="saveCurrentInputs()"></td>`;
+        }
+        inputBodyHTML += `</tr>`;
+    });
+    document.getElementById('input-body').innerHTML = inputBodyHTML;
+
+    let resultHeadHTML = `<tr><th>구분</th>`;
+    for (let c = 1; c <= classCount; c++) {
+        resultHeadHTML += `<th>${c}반</th>`;
+    }
+    resultHeadHTML += `</tr>`;
+    document.getElementById('result-head').innerHTML = resultHeadHTML;
+
+    document.getElementById('result-body').innerHTML = `<tr><td colspan="${classCount + 1}">순위를 입력한 후 집계 버튼을 눌러주세요.</td></tr>`;
+}
+
+function calculateScores() {
+    saveCurrentInputs();
+    gradeData[currentGrade]._calculated = true;
+
+    const classCount = gradeClasses[currentGrade];
+    let classScores = Array(classCount).fill(0);
+    let winCounts = Array(classCount).fill(0);
+    let tugOfWarRank = Array(classCount).fill(99);
+
+    sportsList.forEach((sport, sIdx) => {
+        const scores = scoreRules[sport];
+        for (let c = 1; c <= classCount; c++) {
+            const val = gradeData[currentGrade][sport][c];
+            const inputVal = parseInt(val);
+            if (!isNaN(inputVal) && inputVal >= 1 && inputVal <= classCount) {
+                classScores[c - 1] += scores[inputVal - 1];
+                if (inputVal === 1) winCounts[c - 1]++;
+                if (sport === "줄다리기") tugOfWarRank[c - 1] = inputVal;
+            }
+        }
+    });
+
+    let tempResults = [];
+    for (let c = 0; c < classCount; c++) {
+        let tieScore = classScores[c] + (winCounts[c] * 0.1) + ((10 - tugOfWarRank[c]) * 0.01);
+        tempResults.push({
+            classNum: c + 1,
+            score: classScores[c],
+            wins: winCounts[c],
+            tugRank: tugOfWarRank[c],
+            tieScore: tieScore
+        });
+    }
+
+    tempResults.sort((a, b) => b.tieScore - a.tieScore);
+
+    let finalRanks = {};
+    tempResults.forEach((item, index) => {
+        finalRanks[item.classNum] = index + 1;
+    });
+
+    let resultBodyHTML = '';
+
+    resultBodyHTML += `<tr><td><strong>총 득점</strong></td>`;
+    for (let c = 1; c <= classCount; c++) {
+        resultBodyHTML += `<td><strong>${classScores[c - 1]}점</strong></td>`;
+    }
+    resultBodyHTML += `</tr>`;
+
+    resultBodyHTML += `<tr><td>우승(1위) 횟수</td>`;
+    for (let c = 1; c <= classCount; c++) {
+        resultBodyHTML += `<td>${winCounts[c - 1]}회</td>`;
+    }
+    resultBodyHTML += `</tr>`;
+
+    resultBodyHTML += `<tr><td><strong>종합 순위</strong></td>`;
+    for (let c = 1; c <= classCount; c++) {
+        const rank = finalRanks[c];
+        const rankClass = rank === 1 ? 'rank-1' : (rank === 2 ? 'rank-2' : '');
+        resultBodyHTML += `<td class="${rankClass}"><strong>${rank}위</strong></td>`;
+    }
+    resultBodyHTML += `</tr>`;
+
+    resultBodyHTML += `<tr><td>시상금</td>`;
+    for (let c = 1; c <= classCount; c++) {
+        const rank = finalRanks[c];
+        resultBodyHTML += `<td>${prizeMoney[rank] || '-'}</td>`;
+    }
+    resultBodyHTML += `</tr>`;
+
+    document.getElementById('result-body').innerHTML = resultBodyHTML;
+}
+
+window.onload = function() {
+    updateTheme(1);
+    renderTables();
+};
+</script>
+
+</body>
+</html>
