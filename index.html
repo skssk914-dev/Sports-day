@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> 덕진 어울림 한마당 점수 집계 프로그램</title>
+    <title>덕진 어울림 한마당 점수 집계 프로그램</title>
     <style>
         :root {
             /* 학년별 테마 색상 변수 */
@@ -116,6 +116,31 @@
             transition: border-color 0.3s ease;
         }
 
+        /* 데이터 저장/불러오기 버튼 영역 */
+        .data-controls {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn-data {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #334155;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-data:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
         /* 테이블 공통 스타일 */
         table {
             width: 100%;
@@ -140,11 +165,11 @@
             font-size: 15px;
         }
 
-        /* 순위 입력 창 스타일 (기존 크기 대비 2배 확대) */
+        /* 순위 입력 창 스타일 */
         input[type="number"] {
             width: 65px;
             height: 50px;
-            font-size: 28px; /* 기존 14px -> 28px로 2배 확대 */
+            font-size: 28px;
             font-weight: 800;
             text-align: center;
             color: #0f172a;
@@ -191,13 +216,12 @@
         .rank-1 { background-color: #fef08a !important; font-weight: bold; color: #854d0e; }
         .rank-2 { background-color: #f1f5f9 !important; }
         .rank-3 { background-color: #ffedd5 !important; color: #9a3412; }
-
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1> 2026 덕진 어울림 한마당 점수 집계 프로그램</h1>
+    <h1>2026 덕진 어울림 한마당 점수 집계 프로그램</h1>
 
     <!-- 학년 선택 탭 -->
     <div class="tab-buttons">
@@ -208,8 +232,15 @@
 
     <div class="info-box">
         * 각 종목별로 각 반의 <strong>순위(숫자)</strong>를 입력한 후 <strong>[점수 집계 및 순위 산출]</strong> 버튼을 누르세요.<br>
-        * 입력된 값은 학년을 이동해도 유지되며, 언제든 수정 후 재집계할 수 있습니다.<br>
+        * 입력된 값은 학년을 이동해도 유지되며, <strong>[데이터 저장]</strong>을 통해 파일(.json)로 내보내 체육부장님과 공유할 수 있습니다.<br>
         * 동점자 처리 규정: <strong>총득점 &gt; 우승(1등) 횟수 &gt; 줄다리기 순위</strong> 순으로 자동 계산됩니다.
+    </div>
+
+    <!-- 데이터 공유/내보내기/불러오기 버튼 영역 -->
+    <div class="data-controls">
+        <button class="btn-data" onclick="exportData()">💾 데이터 내보내기 (저장)</button>
+        <button class="btn-data" onclick="document.getElementById('importFile').click()">📂 데이터 불러오기</button>
+        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
     </div>
 
     <!-- 순위 입력 테이블 -->
@@ -232,17 +263,17 @@
 <script>
 // 엑셀 기준 배점표
 const scoreRules = {
-   "축구": [200, 170, 150, 150, 100, 100],
-  "풋살": [200, 170, 150, 150, 100, 100],  
-  "피구": [250, 200, 160, 130, 120, 100], 
-  "100M(남)": [100, 70,  50,  40,  20,  10],
-  "100M(여)": [100, 70,  50,  40,  20,  10],  
-  "2인3각": [250, 200, 160, 130, 120, 100], 
-  "이어달리기": [200, 160, 130, 120, 100, 80],
-  "투호": [250, 200, 160, 130, 120, 100],
-  "자유투": [250, 200, 160, 130, 120, 100],
-  "단체줄넘기": [250, 200, 160, 130, 120, 100],
-  "줄다리기": [300, 250, 200, 200, 150, 150],
+    "축구": [200, 170, 150, 150, 100, 100],
+    "풋살": [200, 170, 150, 150, 100, 100],  
+    "피구": [250, 200, 160, 130, 120, 100], 
+    "100M(남)": [100, 70,  50,  40,  20,  10],
+    "100M(여)": [100, 70,  50,  40,  20,  10],  
+    "2인3각": [250, 200, 160, 130, 120, 100], 
+    "이어달리기": [200, 160, 130, 120, 100, 80],
+    "투호": [250, 200, 160, 130, 120, 100],
+    "자유투": [250, 200, 160, 130, 120, 100],
+    "단체줄넘기": [250, 200, 160, 130, 120, 100],
+    "줄다리기": [300, 250, 200, 200, 150, 150],
 };
 
 const prizeMoney = { 1: "17만원", 2: "14만원", 3: "10만원", 4: "7만원", 5: "5만원", 6: "3만원" };
@@ -250,7 +281,24 @@ const sportsList = Object.keys(scoreRules);
 
 let currentGrade = 1;
 const gradeClasses = { 1: 6, 2: 5, 3: 6 };
-const gradeData = { 1: {}, 2: {}, 3: {} };
+let gradeData = { 1: {}, 2: {}, 3: {} };
+
+// 브라우저 LocalStorage에 자동 저장
+function autoSave() {
+    localStorage.setItem('deokjinSportsData', JSON.stringify(gradeData));
+}
+
+// 브라우저 LocalStorage에서 자동 로드
+function autoLoad() {
+    const saved = localStorage.getItem('deokjinSportsData');
+    if (saved) {
+        try {
+            gradeData = JSON.parse(saved);
+        } catch(e) {
+            console.error("저장된 데이터를 불러오는 중 오류 발생", e);
+        }
+    }
+}
 
 function saveCurrentInputs() {
     const classCount = gradeClasses[currentGrade];
@@ -265,6 +313,7 @@ function saveCurrentInputs() {
             }
         }
     });
+    autoSave();
 }
 
 function updateTheme(grade) {
@@ -315,7 +364,7 @@ function renderTables() {
     sportsList.forEach((sport, sIdx) => {
         inputBodyHTML += `<tr><td><strong>${sport}</strong></td>`;
         for (let c = 1; c <= classCount; c++) {
-            const savedVal = (gradeData[currentGrade][sport] && gradeData[currentGrade][sport][c]) 
+            const savedVal = (gradeData[currentGrade] && gradeData[currentGrade][sport] && gradeData[currentGrade][sport][c]) 
                 ? gradeData[currentGrade][sport][c] 
                 : '';
                 
@@ -338,6 +387,7 @@ function renderTables() {
 function calculateScores() {
     saveCurrentInputs();
     gradeData[currentGrade]._calculated = true;
+    autoSave();
 
     const classCount = gradeClasses[currentGrade];
     let classScores = Array(classCount).fill(0);
@@ -347,7 +397,7 @@ function calculateScores() {
     sportsList.forEach((sport, sIdx) => {
         const scores = scoreRules[sport];
         for (let c = 1; c <= classCount; c++) {
-            const val = gradeData[currentGrade][sport][c];
+            const val = gradeData[currentGrade][sport] ? gradeData[currentGrade][sport][c] : null;
             const inputVal = parseInt(val);
             if (!isNaN(inputVal) && inputVal >= 1 && inputVal <= classCount) {
                 classScores[c - 1] += scores[inputVal - 1];
@@ -408,9 +458,55 @@ function calculateScores() {
     document.getElementById('result-body').innerHTML = resultBodyHTML;
 }
 
+/* 데이터 내보내기 (JSON 파일 다운로드) */
+function exportData() {
+    saveCurrentInputs();
+    const dataStr = JSON.stringify(gradeData, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `덕진_어울림한마당_점수데이터_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+/* 데이터 불러오기 (JSON 파일 업로드) */
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const imported = JSON.parse(e.target.result);
+            if (imported && typeof imported === 'object') {
+                gradeData = imported;
+                autoSave();
+                renderTables();
+                if (gradeData[currentGrade]._calculated) {
+                    calculateScores();
+                }
+                alert("데이터를 성공적으로 불러왔습니다!");
+            } else {
+                alert("올바르지 않은 데이터 형식입니다.");
+            }
+        } catch (err) {
+            alert("파일을 읽는 중 오류가 발생했습니다.");
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // 동일 파일 재업로드 지원용
+}
+
 window.onload = function() {
+    autoLoad(); // 기존 저장 데이터 자동 복원
     updateTheme(1);
     renderTables();
+    if (gradeData[1]._calculated) {
+        calculateScores();
+    }
 };
 </script>
 
