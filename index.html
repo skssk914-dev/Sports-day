@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>덕진 어울림 한마당 점수 집계 프로그램</title>
     <style>
         :root {
@@ -24,10 +24,14 @@
             --current-accent: var(--g1-accent);
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
+            font-family: 'Pretendard', 'Malgun Gothic', -apple-system, sans-serif;
             margin: 0;
-            padding: 30px 20px;
+            padding: 15px 10px;
             background: var(--current-bg);
             transition: background 0.5s ease;
             color: #2c3e50;
@@ -37,53 +41,56 @@
         .container {
             max-width: 1050px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
+            background: rgba(255, 255, 255, 0.98);
+            padding: 20px 15px;
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             backdrop-filter: blur(10px);
+            width: 100%;
         }
 
         h1 {
             text-align: center;
-            font-size: 28px;
+            font-size: 22px;
             font-weight: 800;
-            margin-bottom: 25px;
+            margin-top: 10px;
+            margin-bottom: 20px;
             color: #1e293b;
             letter-spacing: -0.5px;
+            word-break: keep-all;
         }
 
         h2 {
             text-align: center;
-            font-size: 20px;
-            margin-top: 30px;
-            margin-bottom: 15px;
+            font-size: 18px;
+            margin-top: 25px;
+            margin-bottom: 12px;
             color: #334155;
         }
 
-        /* 탭 버튼 스타일 */
+        /* 탭 버튼 스타일 (모바일 최적화) */
         .tab-buttons {
             display: flex;
             justify-content: center;
-            gap: 12px;
-            margin-bottom: 25px;
+            gap: 8px;
+            margin-bottom: 20px;
+            width: 100%;
         }
 
         .tab-btn {
-            padding: 12px 24px;
-            font-size: 16px;
+            flex: 1;
+            padding: 10px 4px;
+            font-size: 13px;
             font-weight: 700;
             border: none;
             background: #e2e8f0;
             color: #64748b;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-
-        .tab-btn:hover {
-            transform: translateY(-2px);
+            text-align: center;
+            white-space: nowrap;
         }
 
         .tab-btn.active[data-grade="1"] {
@@ -106,14 +113,15 @@
 
         .info-box {
             background-color: #f8fafc;
-            border-left: 5px solid var(--current-primary);
-            padding: 14px 18px;
+            border-left: 4px solid var(--current-primary);
+            padding: 12px 14px;
             border-radius: 8px;
-            margin-bottom: 25px;
-            font-size: 14px;
-            line-height: 1.6;
+            margin-bottom: 20px;
+            font-size: 13px;
+            line-height: 1.5;
             color: #475569;
             transition: border-color 0.3s ease;
+            word-break: keep-all;
         }
 
         /* 공유 버튼 영역 */
@@ -124,8 +132,9 @@
         }
 
         .btn-share {
-            padding: 10px 18px;
-            font-size: 15px;
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 14px;
             font-weight: 700;
             border: none;
             background: #2563eb;
@@ -134,11 +143,23 @@
             cursor: pointer;
             transition: all 0.2s ease;
             box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+            text-align: center;
         }
 
-        .btn-share:hover {
+        .btn-share:active {
             background: #1d4ed8;
-            transform: translateY(-1px);
+            transform: scale(0.98);
+        }
+
+        /* 테이블 가로 스크롤 컨테이너 (핵심) */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
         }
 
         /* 테이블 공통 스타일 */
@@ -146,43 +167,63 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            margin-bottom: 25px;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            min-width: 480px; /* 테이블 최소 너비 보장 */
         }
 
         th, td {
-            border: 1px solid #e2e8f0;
-            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            padding: 8px 4px;
             text-align: center;
+            font-size: 14px;
         }
 
         th {
             background-color: #1e293b;
             color: #ffffff;
             font-weight: 600;
-            font-size: 15px;
+            white-space: nowrap;
+        }
+
+        /* 종목 열(첫번째 컬럼) 고정 처리 (Sticky Column) */
+        th:first-child, td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background-color: #f8fafc;
+            font-weight: bold;
+            min-width: 85px;
+            max-width: 100px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            word-break: keep-all;
+        }
+
+        th:first-child {
+            background-color: #0f172a;
+            color: #ffffff;
+            z-index: 3;
         }
 
         /* 순위 입력 창 스타일 */
         input[type="number"] {
-            width: 65px;
-            height: 50px;
-            font-size: 28px;
+            width: 44px;
+            height: 40px;
+            font-size: 20px;
             font-weight: 800;
             text-align: center;
             color: #0f172a;
             border: 2px solid #cbd5e1;
-            border-radius: 8px;
+            border-radius: 6px;
             outline: none;
             transition: all 0.2s ease;
             background-color: #ffffff;
+            -webkit-appearance: none;
+            margin: 0;
         }
 
         input[type="number"]:focus {
             border-color: var(--current-primary);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
             background-color: #fff;
         }
 
@@ -190,22 +231,21 @@
         .btn-calc {
             display: block;
             width: 100%;
-            padding: 16px;
-            font-size: 20px;
+            padding: 15px;
+            font-size: 18px;
             font-weight: 800;
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             cursor: pointer;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
             transition: all 0.2s ease;
         }
 
-        .btn-calc:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        .btn-calc:active {
+            transform: scale(0.98);
         }
 
         /* 결과 테이블 강조 */
@@ -216,12 +256,25 @@
         .rank-1 { background-color: #fef08a !important; font-weight: bold; color: #854d0e; }
         .rank-2 { background-color: #f1f5f9 !important; }
         .rank-3 { background-color: #ffedd5 !important; color: #9a3412; }
+
+        /* 화면 폭이 넓은 태블릿/PC 반응형 처리 */
+        @media (min-width: 600px) {
+            body { padding: 30px 20px; }
+            .container { padding: 30px; }
+            h1 { font-size: 28px; }
+            h2 { font-size: 20px; }
+            .tab-btn { font-size: 16px; padding: 12px 24px; flex: initial; }
+            .info-box { font-size: 14px; padding: 14px 18px; }
+            .btn-share { width: auto; font-size: 15px; }
+            input[type="number"] { width: 55px; height: 46px; font-size: 24px; }
+            th, td { padding: 10px; font-size: 15px; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>2026 덕진 어울림 한마당 점수 집계 프로그램</h1>
+    <h1>2026 덕진 어울림 한마당<br>점수 집계 프로그램</h1>
 
     <!-- 학년 선택 탭 -->
     <div class="tab-buttons">
@@ -232,8 +285,8 @@
 
     <div class="info-box">
         * 각 종목별로 각 반의 <strong>순위(숫자)</strong>를 입력한 후 <strong>[점수 집계 및 순위 산출]</strong> 버튼을 누르세요.<br>
-        * 데이터를 입력한 뒤 <strong>[🔗 데이터 공유 링크 복사]</strong> 버튼을 누르면 링크가 복사되어 체육부장님께 바로 전달할 수 있습니다.<br>
-        * 동점자 처리 규정: <strong>총득점 &gt; 우승(1등) 횟수 &gt; 줄다리기 순위</strong> 순으로 자동 계산됩니다.
+        * 데이터를 입력한 뒤 <strong>[🔗 데이터 공유 링크 복사]</strong> 버튼을 누르면 체육부장님께 바로 전달할 수 있습니다.<br>
+        * <strong>동점자 처리:</strong> 총득점 &gt; 우승(1등) 횟수 &gt; 줄다리기 순위 순
     </div>
 
     <!-- 공유 버튼 영역 -->
@@ -241,21 +294,25 @@
         <button class="btn-share" onclick="copyShareUrl()">🔗 데이터 공유 링크 복사</button>
     </div>
 
-    <!-- 순위 입력 테이블 -->
+    <!-- 순위 입력 테이블 컨테이너 -->
     <h2>종목별 순위 입력</h2>
-    <table id="input-table">
-        <thead id="input-head"></thead>
-        <tbody id="input-body"></tbody>
-    </table>
+    <div class="table-container">
+        <table id="input-table">
+            <thead id="input-head"></thead>
+            <tbody id="input-body"></tbody>
+        </table>
+    </div>
 
     <button class="btn-calc" onclick="calculateScores()">점수 집계 및 순위 산출</button>
 
-    <!-- 집계 결과 테이블 -->
+    <!-- 집계 결과 테이블 컨테이너 -->
     <h2>종합 집계 결과</h2>
-    <table class="result-table">
-        <thead id="result-head"></thead>
-        <tbody id="result-body"></tbody>
-    </table>
+    <div class="table-container">
+        <table class="result-table">
+            <thead id="result-head"></thead>
+            <tbody id="result-body"></tbody>
+        </table>
+    </div>
 </div>
 
 <script>
@@ -281,6 +338,15 @@ let currentGrade = 1;
 const gradeClasses = { 1: 6, 2: 5, 3: 6 };
 let gradeData = { 1: {}, 2: {}, 3: {} };
 
+// 한글 및 유니코드 대응 Base64 인코딩/디코딩 함수
+function utf8ToBase64(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+}
+
+function base64ToUtf8(str) {
+    return decodeURIComponent(escape(atob(str)));
+}
+
 // 브라우저 LocalStorage 저장
 function autoSave() {
     localStorage.setItem('deokjinSportsData', JSON.stringify(gradeData));
@@ -292,13 +358,15 @@ function loadFromUrl() {
     const encodedData = urlParams.get('data');
     if (encodedData) {
         try {
-            // URL 인코딩(Base64) 해제 및 JSON 파싱
-            const jsonString = decodeURIComponent(atob(encodedData));
-            gradeData = JSON.parse(jsonString);
-            autoSave(); // 로컬에도 복원
-            return true;
+            const jsonString = base64ToUtf8(decodeURIComponent(encodedData));
+            const parsedData = JSON.parse(jsonString);
+            if (parsedData && typeof parsedData === 'object') {
+                gradeData = parsedData;
+                autoSave();
+                return true;
+            }
         } catch (e) {
-            console.error("URL 데이터 복원 실패", e);
+            console.error("URL 데이터 복원 오류:", e);
         }
     }
     return false;
@@ -313,7 +381,7 @@ function autoLoad() {
             try {
                 gradeData = JSON.parse(saved);
             } catch(e) {
-                console.error("저장된 데이터 복원 실패", e);
+                console.error("저장된 데이터 복원 오류:", e);
             }
         }
     }
@@ -381,7 +449,7 @@ function renderTables() {
 
     let inputBodyHTML = '';
     sportsList.forEach((sport, sIdx) => {
-        inputBodyHTML += `<tr><td><strong>${sport}</strong></td>`;
+        inputBodyHTML += `<tr><td>${sport}</td>`;
         for (let c = 1; c <= classCount; c++) {
             const savedVal = (gradeData[currentGrade] && gradeData[currentGrade][sport] && gradeData[currentGrade][sport][c]) 
                 ? gradeData[currentGrade][sport][c] 
@@ -447,19 +515,19 @@ function calculateScores() {
 
     let resultBodyHTML = '';
 
-    resultBodyHTML += `<tr><td><strong>총 득점</strong></td>`;
+    resultBodyHTML += `<tr><td>총 득점</td>`;
     for (let c = 1; c <= classCount; c++) {
         resultBodyHTML += `<td><strong>${classScores[c - 1]}점</strong></td>`;
     }
     resultBodyHTML += `</tr>`;
 
-    resultBodyHTML += `<tr><td>우승(1위) 횟수</td>`;
+    resultBodyHTML += `<tr><td>우승(1위)</td>`;
     for (let c = 1; c <= classCount; c++) {
         resultBodyHTML += `<td>${winCounts[c - 1]}회</td>`;
     }
     resultBodyHTML += `</tr>`;
 
-    resultBodyHTML += `<tr><td><strong>종합 순위</strong></td>`;
+    resultBodyHTML += `<tr><td>종합 순위</td>`;
     for (let c = 1; c <= classCount; c++) {
         const rank = finalRanks[c];
         const rankClass = rank === 1 ? 'rank-1' : (rank === 2 ? 'rank-2' : '');
@@ -481,23 +549,25 @@ function calculateScores() {
 function copyShareUrl() {
     saveCurrentInputs();
     
-    // 데이터를 문자열로 변환 후 안전하게 인코딩(Base64)
-    const jsonString = JSON.stringify(gradeData);
-    const encodedData = btoa(encodeURIComponent(jsonString));
-    
-    const baseUrl = window.location.origin + window.location.pathname;
-    const shareUrl = `${baseUrl}?data=${encodedData}`;
+    try {
+        const jsonString = JSON.stringify(gradeData);
+        const encodedData = encodeURIComponent(utf8ToBase64(jsonString));
+        
+        const baseUrl = window.location.origin + window.location.pathname;
+        const shareUrl = `${baseUrl}?data=${encodedData}`;
 
-    // 클립보드 복사
-    navigator.clipboard.writeText(shareUrl).then(() => {
-        alert("데이터가 담긴 공유 링크가 클립보드에 복사되었습니다!\n체육부장님께 이 링크를 보내주세요.");
-    }).catch(err => {
-        prompt("아래 링크를 복사하여 전달해주세요:", shareUrl);
-    });
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            alert("데이터 공유 링크가 복사되었습니다!\n체육부장님께 이 링크를 보내주세요.");
+        }).catch(err => {
+            prompt("아래 링크를 복사하여 전달해 주세요:", shareUrl);
+        });
+    } catch(e) {
+        alert("링크 생성 중 오류가 발생했습니다.");
+    }
 }
 
 window.onload = function() {
-    autoLoad(); // URL 또는 로컬 데이터 복원
+    autoLoad();
     updateTheme(1);
     renderTables();
     if (gradeData[1]._calculated) {
