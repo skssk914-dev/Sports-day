@@ -68,7 +68,7 @@
             color: #334155;
         }
 
-        /* 탭 버튼 스타일 (모바일 최적화) */
+        /* 탭 버튼 스타일 */
         .tab-buttons {
             display: flex;
             justify-content: center;
@@ -124,15 +124,16 @@
             word-break: keep-all;
         }
 
-        /* 공유 버튼 영역 */
-        .share-controls {
+        /* 컨트롤 버튼 영역 (공유 & 리셋) */
+        .control-buttons {
             display: flex;
-            justify-content: flex-end;
+            gap: 10px;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
 
         .btn-share {
-            width: 100%;
+            flex: 2;
             padding: 12px 16px;
             font-size: 14px;
             font-weight: 700;
@@ -146,12 +147,27 @@
             text-align: center;
         }
 
-        .btn-share:active {
-            background: #1d4ed8;
+        .btn-reset {
+            flex: 1;
+            padding: 12px 12px;
+            font-size: 14px;
+            font-weight: 700;
+            border: none;
+            background: #ef4444;
+            color: #ffffff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .btn-share:active, .btn-reset:active {
             transform: scale(0.98);
         }
 
-        /* 테이블 가로 스크롤 컨테이너 (핵심) */
+        /* 테이블 가로 스크롤 컨테이너 */
         .table-container {
             width: 100%;
             overflow-x: auto;
@@ -167,7 +183,7 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            min-width: 480px; /* 테이블 최소 너비 보장 */
+            min-width: 480px;
         }
 
         th, td {
@@ -185,7 +201,7 @@
             white-space: nowrap;
         }
 
-        /* 종목 열(첫번째 컬럼) 고정 처리 (Sticky Column) */
+        /* 종목 열 고정 처리 (Sticky Column) */
         th:first-child, td:first-child {
             position: sticky;
             left: 0;
@@ -257,7 +273,6 @@
         .rank-2 { background-color: #f1f5f9 !important; }
         .rank-3 { background-color: #ffedd5 !important; color: #9a3412; }
 
-        /* 화면 폭이 넓은 태블릿/PC 반응형 처리 */
         @media (min-width: 600px) {
             body { padding: 30px 20px; }
             .container { padding: 30px; }
@@ -265,7 +280,7 @@
             h2 { font-size: 20px; }
             .tab-btn { font-size: 16px; padding: 12px 24px; flex: initial; }
             .info-box { font-size: 14px; padding: 14px 18px; }
-            .btn-share { width: auto; font-size: 15px; }
+            .btn-share, .btn-reset { flex: initial; font-size: 15px; }
             input[type="number"] { width: 55px; height: 46px; font-size: 24px; }
             th, td { padding: 10px; font-size: 15px; }
         }
@@ -289,9 +304,10 @@
         * <strong>동점자 처리:</strong> 총득점 &gt; 우승(1등) 횟수 &gt; 줄다리기 순위 순
     </div>
 
-    <!-- 공유 버튼 영역 -->
-    <div class="share-controls">
+    <!-- 공유 및 초기화 버튼 영역 -->
+    <div class="control-buttons">
         <button class="btn-share" onclick="copyShareUrl()">🔗 데이터 공유 링크 복사</button>
+        <button class="btn-reset" onclick="resetAllData()">🔄 전체 데이터 리셋</button>
     </div>
 
     <!-- 순위 입력 테이블 컨테이너 -->
@@ -563,6 +579,21 @@ function copyShareUrl() {
         });
     } catch(e) {
         alert("링크 생성 중 오류가 발생했습니다.");
+    }
+}
+
+/* 전체 데이터 리셋 기능 */
+function resetAllData() {
+    if (confirm("정말로 모든 학년의 입력 데이터와 집계 결과를 초기화하시겠습니까?\n(초기화 후에는 복구할 수 없습니다.)")) {
+        gradeData = { 1: {}, 2: {}, 3: {} };
+        localStorage.removeItem('deokjinSportsData');
+        
+        // URL 파라미터 제거하여 새로고침
+        const baseUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, baseUrl);
+        
+        switchGrade(1);
+        alert("모든 데이터가 초기화되었습니다.");
     }
 }
 
