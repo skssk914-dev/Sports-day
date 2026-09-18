@@ -582,18 +582,22 @@ function copyShareUrl() {
     }
 }
 
-/* 전체 데이터 리셋 기능 */
+/* 전체 데이터 완전 초기화 기능 (보완완료) */
 function resetAllData() {
     if (confirm("정말로 모든 학년의 입력 데이터와 집계 결과를 초기화하시겠습니까?\n(초기화 후에는 복구할 수 없습니다.)")) {
+        // 1. 메모리 객체 비우기
         gradeData = { 1: {}, 2: {}, 3: {} };
+        
+        // 2. LocalStorage 완전 삭제
         localStorage.removeItem('deokjinSportsData');
         
-        // URL 파라미터 제거하여 새로고침
+        // 3. 화면 입력칸(DOM) 내용 즉시 지우기
+        const inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => input.value = '');
+
+        // 4. 깨끗한 URL로 리다이렉트 (공유 파라미터 완전 제거)
         const baseUrl = window.location.origin + window.location.pathname;
-        window.history.replaceState({}, document.title, baseUrl);
-        
-        switchGrade(1);
-        alert("모든 데이터가 초기화되었습니다.");
+        window.location.href = baseUrl;
     }
 }
 
@@ -601,7 +605,7 @@ window.onload = function() {
     autoLoad();
     updateTheme(1);
     renderTables();
-    if (gradeData[1]._calculated) {
+    if (gradeData[1] && gradeData[1]._calculated) {
         calculateScores();
     }
 };
