@@ -116,29 +116,29 @@
             transition: border-color 0.3s ease;
         }
 
-        /* 데이터 저장/불러오기 버튼 영역 */
-        .data-controls {
+        /* 공유 버튼 영역 */
+        .share-controls {
             display: flex;
             justify-content: flex-end;
-            gap: 10px;
             margin-bottom: 15px;
         }
 
-        .btn-data {
-            padding: 8px 16px;
-            font-size: 14px;
+        .btn-share {
+            padding: 10px 18px;
+            font-size: 15px;
             font-weight: 700;
-            border: 1px solid #cbd5e1;
-            background: #ffffff;
-            color: #334155;
+            border: none;
+            background: #2563eb;
+            color: #ffffff;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
         }
 
-        .btn-data:hover {
-            background: #f1f5f9;
-            border-color: #94a3b8;
+        .btn-share:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
         }
 
         /* 테이블 공통 스타일 */
@@ -232,15 +232,13 @@
 
     <div class="info-box">
         * 각 종목별로 각 반의 <strong>순위(숫자)</strong>를 입력한 후 <strong>[점수 집계 및 순위 산출]</strong> 버튼을 누르세요.<br>
-        * 입력된 값은 학년을 이동해도 유지되며, <strong>[데이터 저장]</strong>을 통해 파일(.json)로 내보내 체육부장님과 공유할 수 있습니다.<br>
+        * 데이터를 입력한 뒤 <strong>[🔗 데이터 공유 링크 복사]</strong> 버튼을 누르면 링크가 복사되어 체육부장님께 바로 전달할 수 있습니다.<br>
         * 동점자 처리 규정: <strong>총득점 &gt; 우승(1등) 횟수 &gt; 줄다리기 순위</strong> 순으로 자동 계산됩니다.
     </div>
 
-    <!-- 데이터 공유/내보내기/불러오기 버튼 영역 -->
-    <div class="data-controls">
-        <button class="btn-data" onclick="exportData()">💾 데이터 내보내기 (저장)</button>
-        <button class="btn-data" onclick="document.getElementById('importFile').click()">📂 데이터 불러오기</button>
-        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+    <!-- 공유 버튼 영역 -->
+    <div class="share-controls">
+        <button class="btn-share" onclick="copyShareUrl()">🔗 데이터 공유 링크 복사</button>
     </div>
 
     <!-- 순위 입력 테이블 -->
@@ -283,19 +281,40 @@ let currentGrade = 1;
 const gradeClasses = { 1: 6, 2: 5, 3: 6 };
 let gradeData = { 1: {}, 2: {}, 3: {} };
 
-// 브라우저 LocalStorage에 자동 저장
+// 브라우저 LocalStorage 저장
 function autoSave() {
     localStorage.setItem('deokjinSportsData', JSON.stringify(gradeData));
 }
 
-// 브라우저 LocalStorage에서 자동 로드
-function autoLoad() {
-    const saved = localStorage.getItem('deokjinSportsData');
-    if (saved) {
+// URL 파라미터에서 데이터 읽어오기
+function loadFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedData = urlParams.get('data');
+    if (encodedData) {
         try {
-            gradeData = JSON.parse(saved);
-        } catch(e) {
-            console.error("저장된 데이터를 불러오는 중 오류 발생", e);
+            // URL 인코딩(Base64) 해제 및 JSON 파싱
+            const jsonString = decodeURIComponent(atob(encodedData));
+            gradeData = JSON.parse(jsonString);
+            autoSave(); // 로컬에도 복원
+            return true;
+        } catch (e) {
+            console.error("URL 데이터 복원 실패", e);
+        }
+    }
+    return false;
+}
+
+// LocalStorage에서 데이터 읽어오기
+function autoLoad() {
+    const hasUrlData = loadFromUrl();
+    if (!hasUrlData) {
+        const saved = localStorage.getItem('deokjinSportsData');
+        if (saved) {
+            try {
+                gradeData = JSON.parse(saved);
+            } catch(e) {
+                console.error("저장된 데이터 복원 실패", e);
+            }
         }
     }
 }
@@ -458,50 +477,27 @@ function calculateScores() {
     document.getElementById('result-body').innerHTML = resultBodyHTML;
 }
 
-/* 데이터 내보내기 (JSON 파일 다운로드) */
-function exportData() {
+/* URL 기반 데이터 공유 링크 생성 기능 */
+function copyShareUrl() {
     saveCurrentInputs();
-    const dataStr = JSON.stringify(gradeData, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
     
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `덕진_어울림한마당_점수데이터_${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-}
+    // 데이터를 문자열로 변환 후 안전하게 인코딩(Base64)
+    const jsonString = JSON.stringify(gradeData);
+    const encodedData = btoa(encodeURIComponent(jsonString));
+    
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${baseUrl}?data=${encodedData}`;
 
-/* 데이터 불러오기 (JSON 파일 업로드) */
-function importData(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const imported = JSON.parse(e.target.result);
-            if (imported && typeof imported === 'object') {
-                gradeData = imported;
-                autoSave();
-                renderTables();
-                if (gradeData[currentGrade]._calculated) {
-                    calculateScores();
-                }
-                alert("데이터를 성공적으로 불러왔습니다!");
-            } else {
-                alert("올바르지 않은 데이터 형식입니다.");
-            }
-        } catch (err) {
-            alert("파일을 읽는 중 오류가 발생했습니다.");
-        }
-    };
-    reader.readAsText(file);
-    event.target.value = ''; // 동일 파일 재업로드 지원용
+    // 클립보드 복사
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        alert("데이터가 담긴 공유 링크가 클립보드에 복사되었습니다!\n체육부장님께 이 링크를 보내주세요.");
+    }).catch(err => {
+        prompt("아래 링크를 복사하여 전달해주세요:", shareUrl);
+    });
 }
 
 window.onload = function() {
-    autoLoad(); // 기존 저장 데이터 자동 복원
+    autoLoad(); // URL 또는 로컬 데이터 복원
     updateTheme(1);
     renderTables();
     if (gradeData[1]._calculated) {
